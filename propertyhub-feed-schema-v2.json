@@ -1,0 +1,739 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://propertyhub.in.th/schemas/json-feed-v2.0.json",
+  "title": "PropertyHub JSON Feed",
+  "description": "JSON specification for authorized partners to provide property listing information to PropertyHub",
+  "type": "object",
+  "required": ["updatedAt", "listingCount", "listingData"],
+  "properties": {
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Update date and time of the list in ISO 8601 format (UTC timezone)"
+    },
+    "listingCount": {
+      "type": "integer",
+      "description": "Number of elements in listingData field",
+      "minimum": 0
+    },
+    "listingData": {
+      "type": "array",
+      "description": "Array of listing data",
+      "items": {
+        "$ref": "#/$defs/listing"
+      }
+    }
+  },
+  "$defs": {
+    "listing": {
+      "type": "object",
+      "required": ["refNo", "propertyType", "postType", "title", "price"],
+      "properties": {
+        "refNo": {
+          "type": "string",
+          "description": "Unique Reference No. for this listing. Must be unique across all listings. If a property has both FOR_SALE and FOR_RENT, create 2 separate listings with different refNos (e.g., 1234-S for sale, 1234-R for rent)."
+        },
+        "propertyType": {
+          "type": "string",
+          "enum": ["CONDO", "HOME", "LAND", "SHOP_HOUSE", "TOWN_HOUSE", "APARTMENT", "FACTORY", "OFFICE", "RETAIL_SPACE", "HOME_OFFICE", "TWIN_HOUSE"],
+          "description": "Type of property"
+        },
+        "postType": {
+          "type": "string",
+          "enum": ["FOR_RENT", "FOR_SALE"],
+          "description": "Type of listing. Note: APARTMENT can only be FOR_SALE."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "DELETED"],
+          "description": "DEPRECATED - Status of the listing. Listings missing from feed are considered removed."
+        },
+        "title": {
+          "type": "object",
+          "description": "Title of the listing in multiple languages. Either th or en must be provided.",
+          "properties": {
+            "th": {
+              "type": "string",
+              "minLength": 1
+            },
+            "en": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "anyOf": [{ "required": ["th"] }, { "required": ["en"] }]
+        },
+        "detail": {
+          "type": "object",
+          "description": "Detail of the listing in multiple languages",
+          "properties": {
+            "th": {
+              "type": "string"
+            },
+            "en": {
+              "type": "string"
+            }
+          }
+        },
+        "roomType": {
+          "type": "string",
+          "enum": [
+            "STUDIO",
+            "ONE_BED_ROOM",
+            "TWO_BED_ROOM",
+            "THREE_BED_ROOM",
+            "FOUR_BED_ROOM",
+            "FIVE_BED_ROOM",
+            "SIX_BED_ROOM",
+            "MOFF",
+            "LOFT",
+            "DUPLEX_ONE_BED",
+            "DUPLEX_TWO_BED",
+            "DUPLEX_THREE_BED",
+            "DUPLEX_FOUR_BED",
+            "DUPLEX_FIVE_BED",
+            "PENTHOUSE",
+            "VILLA",
+            "ROOM_TYPE_OTHER"
+          ],
+          "description": "Unit type of CONDO room (only valid for CONDO)"
+        },
+        "onFloor": {
+          "type": ["string", "integer"],
+          "description": "Floor number that the listing is on (only valid for CONDO). Examples: '5', '12A', 'G', 'B1', 2"
+        },
+        "roomNumber": {
+          "type": "string",
+          "description": "Building room number of CONDO room (e.g., '2320', '12A10') - only valid for CONDO"
+        },
+        "roomHomeAddress": {
+          "type": "string",
+          "description": "Home address of CONDO room (e.g., '5/333') - only valid for CONDO"
+        },
+        "floorArea": {
+          "type": "number",
+          "description": "Floor area in square meters. For CONDO: room size. For others: usable area. Not valid for LAND.",
+          "exclusiveMinimum": 0
+        },
+        "landArea": {
+          "type": "number",
+          "description": "Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Not valid for CONDO.",
+          "exclusiveMinimum": 0
+        },
+        "areaWidth": {
+          "type": "number",
+          "description": "Width of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)",
+          "exclusiveMinimum": 0
+        },
+        "areaDepth": {
+          "type": "number",
+          "description": "Depth of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)",
+          "exclusiveMinimum": 0
+        },
+        "landWidth": {
+          "type": "number",
+          "description": "Width of the land plot in meters (only valid for LAND)",
+          "exclusiveMinimum": 0
+        },
+        "landDepth": {
+          "type": "number",
+          "description": "Depth of the land plot in meters (only valid for LAND)",
+          "exclusiveMinimum": 0
+        },
+        "numberOfBed": {
+          "type": "integer",
+          "description": "Number of bedrooms. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE. Optional for CONDO (will be inferred from roomType if not provided).",
+          "minimum": 1
+        },
+        "numberOfBath": {
+          "type": "integer",
+          "description": "Number of bathrooms. Required for CONDO, HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE.",
+          "minimum": 1
+        },
+        "numberOfFloor": {
+          "type": "number",
+          "multipleOf": 0.5,
+          "description": "Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Not valid for CONDO and LAND.",
+          "minimum": 1
+        },
+        "numberOfParking": {
+          "type": "integer",
+          "description": "Number of parking spaces available. Optional for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE types.",
+          "minimum": 0
+        },
+        "facingDirection": {
+          "type": "string",
+          "enum": ["EAST", "NORTHEAST", "SOUTHEAST", "NORTH", "SOUTH", "NORTHWEST", "SOUTHWEST", "WEST"],
+          "description": "Direction the property or room is facing"
+        },
+        "furnished": {
+          "type": "string",
+          "enum": ["FULLY", "PARTIAL", "UNFURNISHED"],
+          "description": "Furnishing condition (only valid for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE)"
+        },
+        "tenure": {
+          "type": "string",
+          "enum": ["FREEHOLD", "LEASEHOLD"],
+          "description": "Tenure of the property (only applicable for FOR_SALE CONDO, ignored for all FOR_RENT listings and other property types)"
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        },
+        "price": {
+          "$ref": "#/$defs/price"
+        },
+        "amenities": {
+          "$ref": "#/$defs/amenities"
+        },
+        "pictures": {
+          "$ref": "#/$defs/pictures"
+        },
+        "contactInformation": {
+          "$ref": "#/$defs/contactInformation"
+        },
+        "tagName": {
+          "type": "array",
+          "description": "Specific tags associated with this listing (maximum 5)",
+          "maxItems": 5,
+          "items": {
+            "type": "string"
+          }
+        },
+        "remark": {
+          "type": "string",
+          "description": "Internal memo or remark for the listing (not displayed on listing page)"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "CONDO"
+              }
+            }
+          },
+          "then": {
+            "required": ["roomType", "onFloor", "floorArea", "numberOfBath"],
+            "properties": {
+              "location": {
+                "required": ["projectId"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["HOME", "TOWN_HOUSE", "SHOP_HOUSE", "HOME_OFFICE", "TWIN_HOUSE"]
+              }
+            }
+          },
+          "then": {
+            "required": ["landArea", "numberOfBed", "numberOfBath", "numberOfFloor", "location"],
+            "properties": {
+              "location": {
+                "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "LAND"
+              }
+            }
+          },
+          "then": {
+            "required": ["landArea", "location"],
+            "properties": {
+              "location": {
+                "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["OFFICE", "RETAIL_SPACE"]
+              }
+            }
+          },
+          "then": {
+            "required": ["floorArea", "location"],
+            "properties": {
+              "location": {
+                "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "FACTORY"
+              }
+            }
+          },
+          "then": {
+            "required": ["landArea", "floorArea", "location"],
+            "properties": {
+              "location": {
+                "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "APARTMENT"
+              }
+            }
+          },
+          "then": {
+            "required": ["landArea", "numberOfFloor", "location"],
+            "properties": {
+              "postType": {
+                "const": "FOR_SALE",
+                "description": "APARTMENT can only be FOR_SALE"
+              },
+              "location": {
+                "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "postType": {
+                "const": "FOR_SALE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "price": {
+                "required": ["forSale"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "postType": {
+                "const": "FOR_RENT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "price": {
+                "required": ["forRent"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "integer",
+          "description": "Project ID according to PropertyHub Project ID (preferred option). Required for CONDO."
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Project name of the property"
+        },
+        "homeAddress": {
+          "type": "string",
+          "description": "Home address of the property (not valid for CONDO or LAND)"
+        },
+        "soi": {
+          "type": "string",
+          "description": "Alley/street name (e.g., Sukhumvit 24) - ignored for CONDO"
+        },
+        "road": {
+          "type": "string",
+          "description": "Road name - ignored for CONDO"
+        },
+        "provinceCode": {
+          "type": "string",
+          "description": "DEPRECATED - Province code will be derived from lat/lng (Ignored for CONDO)."
+        },
+        "districtCode": {
+          "type": "integer",
+          "description": "DEPRECATED - District code will be derived from lat/lng (Ignored for CONDO)."
+        },
+        "subDistrictCode": {
+          "type": "integer",
+          "description": "DEPRECATED - Sub District code will be derived from lat/lng (Ignored for CONDO)."
+        },
+        "postCode": {
+          "type": "integer",
+          "description": "Post code - ignored for CONDO"
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO."
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO."
+        }
+      }
+    },
+    "price": {
+      "type": "object",
+      "properties": {
+        "forSale": {
+          "$ref": "#/$defs/forSalePrice"
+        },
+        "forRent": {
+          "$ref": "#/$defs/forRentPrice"
+        }
+      }
+    },
+    "forSalePrice": {
+      "type": "object",
+      "required": ["priceType"],
+      "properties": {
+        "priceType": {
+          "type": "string",
+          "enum": ["CALL", "AMOUNT"]
+        },
+        "price": {
+          "type": "integer",
+          "description": "Selling price in THB (required when priceType is AMOUNT). Must be integer.",
+          "minimum": 1
+        }
+      },
+      "if": {
+        "properties": {
+          "priceType": {
+            "const": "AMOUNT"
+          }
+        }
+      },
+      "then": {
+        "required": ["price"]
+      }
+    },
+    "forRentPrice": {
+      "type": "object",
+      "required": ["priceType"],
+      "properties": {
+        "priceType": {
+          "type": "string",
+          "enum": ["CALL", "AMOUNT"]
+        },
+        "price": {
+          "type": "integer",
+          "description": "Monthly rental price in THB (required when priceType is AMOUNT). Must be integer.",
+          "minimum": 1
+        },
+        "advancePayment": {
+          "$ref": "#/$defs/advancePayment"
+        },
+        "deposit": {
+          "$ref": "#/$defs/deposit"
+        }
+      },
+      "if": {
+        "properties": {
+          "priceType": {
+            "const": "AMOUNT"
+          }
+        }
+      },
+      "then": {
+        "required": ["price"]
+      }
+    },
+    "advancePayment": {
+      "type": "object",
+      "required": ["advancePaymentType"],
+      "properties": {
+        "advancePaymentType": {
+          "type": "string",
+          "enum": ["AMOUNT", "MONTH", "NO_ADVANCE_PAYMENT", "CALL"]
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Amount of advance payment in THB (required when advancePaymentType is AMOUNT)",
+          "minimum": 0
+        },
+        "month": {
+          "type": "integer",
+          "description": "Number of months for advance payment (required when advancePaymentType is MONTH)",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "advancePaymentType": {
+                "const": "AMOUNT"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "advancePaymentType": {
+                "const": "MONTH"
+              }
+            }
+          },
+          "then": {
+            "required": ["month"]
+          }
+        }
+      ]
+    },
+    "deposit": {
+      "type": "object",
+      "required": ["depositType"],
+      "properties": {
+        "depositType": {
+          "type": "string",
+          "enum": ["AMOUNT", "MONTH", "NO_DEPOSIT_PAYMENT", "CALL"]
+        },
+        "amount": {
+          "type": "integer",
+          "description": "Amount of deposit in THB (required when depositType is AMOUNT)",
+          "minimum": 0
+        },
+        "month": {
+          "type": "integer",
+          "description": "Number of months for deposit (required when depositType is MONTH)",
+          "minimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "depositType": {
+                "const": "AMOUNT"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "depositType": {
+                "const": "MONTH"
+              }
+            }
+          },
+          "then": {
+            "required": ["month"]
+          }
+        }
+      ]
+    },
+    "amenities": {
+      "type": "object",
+      "description": "Property amenities. Different properties support different amenities.",
+      "properties": {
+        "allowPet": {
+          "type": "boolean",
+          "description": "Allow pets (CONDO only)"
+        },
+        "hasAirCondition": {
+          "type": "boolean",
+          "description": "Has air conditioning (CONDO only)"
+        },
+        "hasRefrigerator": {
+          "type": "boolean"
+        },
+        "hasTV": {
+          "type": "boolean"
+        },
+        "hasWaterHeater": {
+          "type": "boolean"
+        },
+        "hasDigitalDoorLock": {
+          "type": "boolean"
+        },
+        "hasHotTub": {
+          "type": "boolean"
+        },
+        "hasKitchenHood": {
+          "type": "boolean"
+        },
+        "hasKitchenStove": {
+          "type": "boolean",
+          "description": "Has kitchen stove (CONDO only)"
+        },
+        "hasWasher": {
+          "type": "boolean"
+        },
+        "hasMicrowave": {
+          "type": "boolean",
+          "description": "Has microwave (CONDO only)"
+        },
+        "hasFurniture": {
+          "type": "boolean"
+        },
+        "hasInternet": {
+          "type": "boolean"
+        },
+        "hasPhone": {
+          "type": "boolean",
+          "description": "Has phone line (non-CONDO only)"
+        },
+        "hasLift": {
+          "type": "boolean",
+          "description": "Has lift/elevator (non-CONDO only)"
+        },
+        "hasThaiKitchen": {
+          "type": "boolean",
+          "description": "Has Thai kitchen (non-CONDO only)"
+        },
+        "hasPantryKitchen": {
+          "type": "boolean",
+          "description": "Has pantry kitchen (non-CONDO only)"
+        },
+        "hasPersonalPool": {
+          "type": "boolean",
+          "description": "Has personal pool (non-CONDO only)"
+        },
+        "hasEvCharger": {
+          "type": "boolean",
+          "description": "Has EV charger (non-CONDO only)"
+        },
+        "hasBuildInCloset": {
+          "type": "boolean",
+          "description": "Has built-in closet (non-CONDO only)"
+        },
+        "hasStorageRoom": {
+          "type": "boolean",
+          "description": "Has storage room (non-CONDO only)"
+        }
+      }
+    },
+    "pictures": {
+      "oneOf": [
+        {
+          "type": "array",
+          "description": "Simple format: array of pictures without grouping",
+          "items": {
+            "$ref": "#/$defs/picture"
+          }
+        },
+        {
+          "type": "object",
+          "description": "Grouped format: pictures organized by category",
+          "properties": {
+            "listing": {
+              "type": "array",
+              "description": "Pictures of the property",
+              "items": {
+                "$ref": "#/$defs/picture"
+              }
+            },
+            "buildingAndFacilities": {
+              "type": "array",
+              "description": "Pictures of condo building, lobby, playground and facilities",
+              "items": {
+                "$ref": "#/$defs/picture"
+              }
+            },
+            "other": {
+              "type": "array",
+              "description": "Other pictures (e.g., 3D render, surrounding area, neighborhood)",
+              "items": {
+                "$ref": "#/$defs/picture"
+              }
+            },
+            "notSpecific": {
+              "type": "array",
+              "description": "Uncategorized pictures",
+              "items": {
+                "$ref": "#/$defs/picture"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "picture": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "uri",
+          "description": "Simple format: direct URL to the picture"
+        },
+        {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Full URL to the picture"
+            },
+            "caption": {
+              "type": "string",
+              "description": "Caption for the picture"
+            }
+          },
+          "description": "Object format: URL with optional caption"
+        }
+      ]
+    },
+    "contactInformation": {
+      "type": "object",
+      "description": "Only applicable for Agency package. Ignored for other packages.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Agent name"
+        },
+        "lineId": {
+          "type": "string",
+          "description": "Line ID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address"
+        },
+        "whatsApp": {
+          "type": "string",
+          "description": "WhatsApp number"
+        },
+        "agentPhone": {
+          "type": "array",
+          "description": "Agent phone numbers (maximum 2)",
+          "maxItems": 2,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

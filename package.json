@@ -1,0 +1,17 @@
+{
+  "name": "propertyhub-feed-validator",
+  "version": "1.0.0",
+  "description": "PropertyHub JSON Feed Validator with Bun",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.js",
+    "dev": "bun --hot run server.js",
+    "validate": "bun run validate-cli.js",
+    "transform": "bun run validate-cli.js --transform"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

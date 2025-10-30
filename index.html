@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PropertyHub JSON Feed Validator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body class="h-screen overflow-hidden">
+  <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-6 shadow-lg">
+    <h1 class="text-2xl font-semibold">🏢 PropertyHub JSON Feed Validator</h1>
+    <p class="text-sm mt-1 opacity-90">Validate your property feed JSON against the PropertyHub schema</p>
+  </div>
+
+  <div class="flex h-[calc(100vh-88px)]">
+    <div class="w-2/5 border-r-2 border-gray-200 overflow-y-auto bg-gray-50">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-900">📋 JSON Schema</h2>
+        <pre id="schemaDisplay" class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">Loading schema...</pre>
+      </div>
+    </div>
+
+    <div class="w-3/5 overflow-y-auto p-8">
+      <div class="bg-white rounded-xl shadow p-8 mb-6">
+        <h2 class="text-xl font-semibold mb-6 text-gray-900">📤 Upload JSON Feed</h2>
+        <div class="relative my-6">
+          <input type="file" id="fileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".json" />
+          <label for="fileInput" id="fileLabel" class="flex items-center justify-center p-12 border-2 border-dashed border-gray-400 rounded-lg bg-gray-50 hover:border-purple-500 hover:bg-gray-100 transition cursor-pointer">
+            <div class="text-center">
+              <div class="text-5xl mb-2">📄</div>
+              <div class="font-semibold mb-1">Click to select JSON file</div>
+              <div class="text-sm text-gray-600">or drag and drop here</div>
+            </div>
+          </label>
+        </div>
+        <div class="mb-4">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="transformCheckbox" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+            <span class="text-sm text-gray-700">Transform relaxed input to strict format (e.g., convert string numbers like "12.5" to numbers)</span>
+          </label>
+        </div>
+        <button id="validateBtn" disabled class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">Validate JSON</button>
+      </div>
+
+      <div id="loading" class="hidden text-center py-8">
+        <div class="w-10 h-10 border-4 border-gray-200 border-t-purple-600 rounded-full spinner mx-auto"></div>
+        <p class="mt-4 text-gray-600">Validating...</p>
+      </div>
+
+      <div id="resultSection" class="hidden bg-white rounded-xl shadow p-8">
+        <div class="flex items-center justify-between pb-4 border-b-2 border-gray-200 mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">Validation Result</h2>
+          <span id="resultBadge" class="px-4 py-2 rounded-full font-semibold text-sm"></span>
+        </div>
+        <div id="resultContent" class="text-sm"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedFile = null;
+
+    // Load schema on page load
+    async function loadSchema() {
+      try {
+        const response = await fetch('/schema');
+        const schema = await response.json();
+        document.getElementById('schemaDisplay').textContent = JSON.stringify(schema, null, 2);
+      } catch (error) {
+        document.getElementById('schemaDisplay').textContent = 'Error loading schema: ' + error.message;
+      }
+    }
+
+    // Handle file selection
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const label = document.getElementById('fileLabel');
+        label.className = 'flex items-center justify-center p-12 border-2 border-dashed border-green-500 rounded-lg bg-green-50 cursor-pointer';
+        label.innerHTML = `
+          <div class="text-center">
+            <div class="text-5xl mb-2">✅</div>
+            <div class="font-semibold mb-1">${file.name}</div>
+            <div class="text-sm text-gray-600">${(file.size / 1024).toFixed(2)} KB</div>
+          </div>
+        `;
+        document.getElementById('validateBtn').disabled = false;
+      }
+    });
+
+    // Handle drag and drop
+    const fileLabel = document.getElementById('fileLabel');
+    fileLabel.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      fileLabel.classList.add('border-purple-500');
+    });
+
+    fileLabel.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      fileLabel.classList.remove('border-purple-500');
+    });
+
+    fileLabel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/json') {
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        selectedFile = file;
+        fileLabel.className = 'flex items-center justify-center p-12 border-2 border-dashed border-green-500 rounded-lg bg-green-50 cursor-pointer';
+        fileLabel.innerHTML = `
+          <div class="text-center">
+            <div class="text-5xl mb-2">✅</div>
+            <div class="font-semibold mb-1">${file.name}</div>
+            <div class="text-sm text-gray-600">${(file.size / 1024).toFixed(2)} KB</div>
+          </div>
+        `;
+        document.getElementById('validateBtn').disabled = false;
+      }
+      fileLabel.classList.remove('border-purple-500');
+    });
+
+    // Handle validation
+    document.getElementById('validateBtn').addEventListener('click', async function() {
+      if (!selectedFile) return;
+
+      const loading = document.getElementById('loading');
+      const resultSection = document.getElementById('resultSection');
+      const resultBadge = document.getElementById('resultBadge');
+      const resultContent = document.getElementById('resultContent');
+
+      loading.classList.remove('hidden');
+      resultSection.classList.add('hidden');
+
+      try {
+        const fileContent = await selectedFile.text();
+        const jsonData = JSON.parse(fileContent);
+
+        const shouldTransform = document.getElementById('transformCheckbox').checked;
+        const queryParam = shouldTransform ? '?transform=true' : '';
+
+        const response = await fetch(`/validate${queryParam}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(jsonData)
+        });
+
+        const result = await response.json();
+
+        loading.classList.add('hidden');
+        resultSection.classList.remove('hidden');
+
+        if (result.valid) {
+          resultBadge.textContent = '✓ Valid';
+          resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-800';
+          resultContent.innerHTML = `
+            <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded text-green-900">
+              <strong class="text-lg block mb-2">✅ ${result.message}</strong>
+              <div class="mt-2">
+                <div>Listing Count: ${result.listingCount}</div>
+                <div>Actual Listings: ${result.actualListings}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          resultBadge.textContent = '✗ Invalid';
+          resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-800';
+          
+          let errorsHtml = `
+            <div class="mb-4">
+              <strong class="text-red-800">Found ${result.totalErrors} error(s)</strong>
+            </div>
+            <div class="space-y-3">
+          `;
+
+          result.errors.forEach(error => {
+            errorsHtml += `
+              <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div class="font-semibold text-red-900 mb-1">Path: ${error.path}</div>
+                <div class="text-red-800">${error.message}</div>
+              </div>
+            `;
+          });
+
+          errorsHtml += '</div>';
+          resultContent.innerHTML = errorsHtml;
+        }
+
+      } catch (error) {
+        loading.classList.add('hidden');
+        resultSection.classList.remove('hidden');
+        resultBadge.textContent = '✗ Error';
+        resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-800';
+        resultContent.innerHTML = `
+          <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+            <div class="font-semibold text-red-900 mb-1">Parse Error</div>
+            <div class="text-red-800">${error.message}</div>
+          </div>
+        `;
+      }
+    });
+
+    // Load schema on page load
+    loadSchema();
+  </script>
+</body>
+</html>
