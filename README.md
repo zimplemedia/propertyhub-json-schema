@@ -64,6 +64,7 @@ The validator includes a **transformation utility** that converts relaxed/legacy
 4. **Legacy field names**: Renames old field names to new schema
    - `deposit.type` → `deposit.depositType`
    - `advancePayment.type` → `advancePayment.advancePaymentType`
+   - `amenities.hasAir` → `amenities.hasAirCondition`
 
 5. **Title and Detail**: Handles missing Thai translations
    - If `title.th` is missing but `title.en` exists → Copy `en` to `th`

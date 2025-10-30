@@ -493,6 +493,18 @@ function transformListing(listing) {
     }
   }
   
+  // Map legacy amenities fields
+  if (transformed.amenities && typeof transformed.amenities === 'object') {
+    const a = { ...transformed.amenities };
+    if (a.hasAirCondition === undefined && a.hasAir !== undefined) {
+      a.hasAirCondition = a.hasAir;
+    }
+    if (a.hasAir !== undefined) {
+      delete a.hasAir;
+    }
+    transformed.amenities = a;
+  }
+
   // Transform tagName (convert comma-separated string to array)
   if (transformed.tagName !== undefined) {
     if (typeof transformed.tagName === 'string') {
