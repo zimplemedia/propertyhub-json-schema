@@ -161,6 +161,16 @@
           "description": "Number of parking spaces available. Optional for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE types.",
           "minimum": 0
         },
+        "numberOfRoom": {
+          "type": "integer",
+          "description": "Number of rooms in the building (only valid for APARTMENT for SALE)",
+          "minimum": 1
+        },
+        "avgRoomArea": {
+          "type": "number",
+          "description": "Average size of room in the building in square meters (only valid for APARTMENT for SALE)",
+          "exclusiveMinimum": 0
+        },
         "facingDirection": {
           "type": "string",
           "enum": ["EAST", "NORTHEAST", "SOUTHEAST", "NORTH", "SOUTH", "NORTHWEST", "SOUTHWEST", "WEST"],
@@ -299,7 +309,7 @@
             }
           },
           "then": {
-            "required": ["landArea", "numberOfFloor", "location"],
+            "required": ["landArea", "numberOfFloor", "numberOfRoom", "location"],
             "properties": {
               "postType": {
                 "const": "FOR_SALE",

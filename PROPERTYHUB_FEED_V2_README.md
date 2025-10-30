@@ -38,9 +38,9 @@ You can provide just `th`, just `en`, or both. At least one language is required
 | Field | Description | Required |
 | --- | --- | --- |
 | **refNo** | Unique Reference No. for this listing. Must be unique across all listings. If a property has both FOR_SALE and FOR_RENT, create 2 separate listings with different refNos (e.g., 1234-S for sale, 1234-R for rent).<br>**Type:** String | Yes |
-| **propertyType** | Type of property.<br>**Allowed values:** `CONDO`, `HOME`, `LAND`, `SHOP_HOUSE`, `TOWN_HOUSE`, `APARTMENT`, `FACTORY`, `OFFICE`, `RETAIL_SPACE`, `HOME_OFFICE`, `TWIN_HOUSE`<br>**Type:** Enum (String)<br><br>**Notes:**<br>• `HOME` - บ้านเดี่ยว (detached house, single house)<br>• `TOWN_HOUSE` - ทาวน์เฮ้าส์ ทาวน์โฮม (townhouse)<br>• `SHOP_HOUSE` - อาคารพานิชย์ (shophouse)<br>• `TWIN_HOUSE` - บ้านแฝด (semi-detached house)<br>• `HOME_OFFICE` - โฮมออฟฟิศ (home office, not office space in office building)<br>• `OFFICE` - เฉพาะพื้นที่ office ในตึกสำนักงาน (only for office space in office building)<br>• `RETAIL_SPACE` - พื้นที่ขายของ (retail space)<br>• `LAND` - ที่ดิน (land plot)<br>• `APARTMENT` - อพาร์ทเมนต์ (apartment building)<br>• `FACTORY` - โรงงาน (factory) | Yes |
-| **postType** | Type of listing.<br>**Allowed values:** `FOR_RENT`, `FOR_SALE`<br>**Type:** Enum (String) | Yes |
-| **status** | **[DEPRECATED]** Status of the listing. Listings missing from feed are considered removed.<br>**Allowed values:** `ACTIVE`, `DELETED`<br>**Type:** Enum (String) | No |
+| **propertyType** | Type of property.<br>**Allowed values:** `CONDO`, `HOME`, `LAND`, `SHOP_HOUSE`, `TOWN_HOUSE`, `APARTMENT`, `FACTORY`, `OFFICE`, `RETAIL_SPACE`, `HOME_OFFICE`, `TWIN_HOUSE`<br>**Type:** Enum (String)<br><br>**Notes:**<br>• `HOME` - บ้านเดี่ยว (detached house, single house)<br>• `TOWN_HOUSE` - ทาวน์เฮ้าส์ ทาวน์โฮม (townhouse)<br>• `SHOP_HOUSE` - อาคารพานิชย์ (shophouse)<br>• `TWIN_HOUSE` - บ้านแฝด (semi-detached house)<br>• `HOME_OFFICE` - โฮมออฟฟิศ (home office, not office space in office building)<br>• `OFFICE` - เฉพาะพื้นที่ office ในตึกสำนักงาน (only for office space in office building)<br>• `RETAIL_SPACE` - พื้นที่ขายของ (retail space)<br>• `LAND` - ที่ดิน (land plot)<br>• `APARTMENT` - อพาร์ทเมนต์/อาคารทั้งหลัง (apartment building, guest house, small/commercial hotel, resort — entire building only). Only `FOR_SALE` is supported; Serviced apartment rooms for rent are not supported.<br>• `FACTORY` - โรงงาน (factory) | Yes |
+| **postType** | Type of listing.<br>**Allowed values:** `FOR_RENT`, `FOR_SALE`. APARTMENT listings must be `FOR_SALE`.<br>**Type:** Enum (String) | Yes |
+| **status** | **DEPRECATED** Status of the listing. Listings missing from the feed are considered removed.<br>**Allowed values:** `ACTIVE`, `DELETED`<br>**Type:** Enum (String) | No |
 | **title** | Title of the listing in multiple languages. Either th or en must be provided.<br>**Type:** Object with `th` and/or `en` properties (both strings) | Yes (either th or en) |
 | **detail** | Detail of the listing in multiple languages.<br>**Type:** Object with optional `th` and/or `en` properties (both strings) | No |
 
@@ -74,8 +74,11 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 **For APARTMENT:**
 
-- Required: `landArea`, `numberOfFloor`, `location`
+- Required: `landArea`, `numberOfFloor`, `numberOfRoom`, `location`
+- Post type must be `FOR_SALE`
 - Location must include: `projectId` OR both `lat` and `lng`
+- Note: Guest house, small/commercial hotel, and resort (entire building) should be sent as `APARTMENT` with `FOR_SALE`.
+- Not supported: Serviced apartment room/unit for rent is not supported in this version.
 
 ---
 
@@ -85,12 +88,12 @@ You can provide just `th`, just `en`, or both. At least one language is required
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------- |
 | **projectId**       | Project ID according to PropertyHub Project ID (preferred option). **Required for CONDO**.<br>**Type:** Integer        | Conditional |
 | **projectName**     | Project name of the property.<br>**Type:** String                                                                      | No          |
-| **homeAddress**     | Home address of the property (not valid for CONDO or LAND).<br>**Type:** String                                        | No          |
+| **homeAddress**     | Home address of the property (not applicable for CONDO or LAND; ignored if provided).<br>**Type:** String              | No          |
 | **soi**             | Alley/street name (e.g., Sukhumvit 24) - ignored for CONDO.<br>**Type:** String                                        | No          |
 | **road**            | Road name - ignored for CONDO.<br>**Type:** String                                                                     | No          |
-| **provinceCode**    | **[DEPRECATED]** Province code will be derived from lat/lng (Ignored for CONDO).<br>**Type:** String                   | No          |
-| **districtCode**    | **[DEPRECATED]** District code will be derived from lat/lng (Ignored for CONDO).<br>**Type:** Integer                  | No          |
-| **subDistrictCode** | **[DEPRECATED]** Sub District code will be derived from lat/lng (Ignored for CONDO).<br>**Type:** Integer              | No          |
+| **provinceCode**    | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** String                                           | No          |
+| **districtCode**    | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** Integer                                          | No          |
+| **subDistrictCode** | **DEPRECATED** Subdistrict code derived from lat/lng (ignored for CONDO).<br>**Type:** Integer                         | No          |
 | **postCode**        | Post code - ignored for CONDO.<br>**Type:** Integer                                                                    | No          |
 | **lat**             | Latitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number  | Conditional |
 | **lng**             | Longitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number | Conditional |
@@ -99,14 +102,14 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 #### Property Dimensions
 
-| Field         | Description                                                                                                                                     | Required    |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| **floorArea** | Floor area in square meters. For CONDO: room size. For others: usable area. Not valid for LAND.<br>**Type:** Number (must be greater than 0)    | Conditional |
-| **landArea**  | Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Not valid for CONDO.<br>**Type:** Number (must be greater than 0) | Conditional |
-| **areaWidth** | Width of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY).<br>**Type:** Number (must be greater than 0)                 | No          |
-| **areaDepth** | Depth of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY).<br>**Type:** Number (must be greater than 0)                 | No          |
-| **landWidth** | Width of the land plot in meters (only valid for LAND).<br>**Type:** Number (must be greater than 0)                                            | No          |
-| **landDepth** | Depth of the land plot in meters (only valid for LAND).<br>**Type:** Number (must be greater than 0)                                            | No          |
+| Field         | Description                                                                                                                                                  | Required    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| **floorArea** | Floor area in square meters. For CONDO: room size. For others: usable area. Ignored for LAND.<br>**Type:** Number (must be greater than 0)                   | Conditional |
+| **landArea**  | Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Ignored for CONDO.<br>**Type:** Number (must be greater than 0)                | Conditional |
+| **areaWidth** | Width of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No          |
+| **areaDepth** | Depth of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No          |
+| **landWidth** | Width of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0)                            | No          |
+| **landDepth** | Depth of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0)                            | No          |
 
 ---
 
@@ -114,14 +117,23 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 | Field | Description | Required |
 | --- | --- | --- |
-| **roomType** | Unit type of CONDO room.<br>**Allowed values:** `STUDIO`, `ONE_BED_ROOM`, `TWO_BED_ROOM`, `THREE_BED_ROOM`, `FOUR_BED_ROOM`, `FIVE_BED_ROOM`, `SIX_BED_ROOM`, `MOFF`, `LOFT`, `DUPLEX_ONE_BED`, `DUPLEX_TWO_BED`, `DUPLEX_THREE_BED`, `DUPLEX_FOUR_BED`, `DUPLEX_FIVE_BED`, `PENTHOUSE`, `VILLA`, `ROOM_TYPE_OTHER`<br>**Type:** Enum (String)<br><br>**Note:** Only valid for CONDO. | Yes (for CONDO) |
-| **onFloor** | Floor number that the listing is on (only valid for CONDO). Examples: '5', 2, '12A', 'G', 'B1'<br>**Type:** String or Integer | Yes (for CONDO) |
-| **roomNumber** | Building room number of CONDO room (e.g., '2320', '12A10') - only valid for CONDO.<br>**Type:** String | No |
-| **roomHomeAddress** | Home address of CONDO room (e.g., '5/333') - only valid for CONDO.<br>**Type:** String | No |
+| **roomType** | Unit type of CONDO room.<br>**Allowed values:** `STUDIO`, `ONE_BED_ROOM`, `TWO_BED_ROOM`, `THREE_BED_ROOM`, `FOUR_BED_ROOM`, `FIVE_BED_ROOM`, `SIX_BED_ROOM`, `MOFF`, `LOFT`, `DUPLEX_ONE_BED`, `DUPLEX_TWO_BED`, `DUPLEX_THREE_BED`, `DUPLEX_FOUR_BED`, `DUPLEX_FIVE_BED`, `PENTHOUSE`, `VILLA`, `ROOM_TYPE_OTHER`<br>**Type:** Enum (String)<br><br>**Note:** Only applicable to CONDO; ignored for other types. | Yes (for CONDO) |
+| **onFloor** | Floor number that the listing is on (only applicable to CONDO; ignored for other types). Examples: '5', 2, '12A', 'G', 'B1'<br>**Type:** String or Integer | Yes (for CONDO) |
+| **roomNumber** | Building room number of CONDO room (e.g., '2320', '12A10') — only applicable to CONDO; ignored for other types.<br>**Type:** String | No |
+| **roomHomeAddress** | Home address of CONDO room (e.g., '5/333') — only applicable to CONDO; ignored for other types.<br>**Type:** String | No |
 | **numberOfBed** | Number of bedrooms. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE. Optional for CONDO (will be inferred from roomType if not provided).<br>**Type:** Integer (minimum: 1) | Conditional |
 | **numberOfBath** | Number of bathrooms. Required for CONDO, HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE.<br>**Type:** Integer (minimum: 1) | Conditional |
-| **numberOfFloor** | Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Not valid for CONDO and LAND.<br>**Type:** Number (minimum: 1, multiple of 0.5). Example: 1, 1.5, 2, 2.5 (2.4 is invalid).<br><br>หมายเหตุ: จำนวนชั้นต้องเป็นจำนวนเต็ม หรือลงท้ายด้วย .5 เท่านั้นเช่น 2 ชั้น ครึ่ง (2.5) | Conditional |
+| **numberOfFloor** | Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Ignored for CONDO and LAND.<br>**Type:** Number (minimum: 1, multiple of 0.5). Example: 1, 1.5, 2, 2.5 (2.4 is invalid).<br><br>หมายเหตุ: จำนวนชั้นต้องเป็นจำนวนเต็ม หรือลงท้ายด้วย .5 เท่านั้นเช่น 2 ชั้น ครึ่ง (2.5) | Conditional |
 | **numberOfParking** | Number of parking spaces available. Optional for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE types.<br>**Type:** Integer (minimum: 0) | No |
+
+---
+
+#### Apartment Building/Hotel Details
+
+| Field | Description | Required |
+| --- | --- | --- |
+| **numberOfRoom** | Number of rooms/units in the building (only applicable to APARTMENT and only when `postType` is `FOR_SALE`; ignored otherwise).<br>**Type:** Integer (minimum: 1) | Yes (for APARTMENT) |
+| **avgRoomArea** | Average unit size in the building in square meters (only applicable to APARTMENT and only when `postType` is `FOR_SALE`; ignored otherwise).<br>**Type:** Number (must be greater than 0) | No |
 
 ---
 
@@ -130,8 +142,8 @@ You can provide just `th`, just `en`, or both. At least one language is required
 | Field | Description | Required |
 | --- | --- | --- |
 | **facingDirection** | Direction the property or room is facing.<br>**Allowed values:** `EAST`, `NORTHEAST`, `SOUTHEAST`, `NORTH`, `SOUTH`, `NORTHWEST`, `SOUTHWEST`, `WEST`<br>**Type:** Enum (String) | No |
-| **furnished** | Furnishing condition (only valid for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE).<br>**Allowed values:** `FULLY`, `PARTIAL`, `UNFURNISHED`<br>**Type:** Enum (String) | No |
-| **tenure** | Tenure of the property (only applicable for FOR_SALE CONDO, ignored for all FOR_RENT listings and other property types).<br>**Allowed values:** `FREEHOLD`, `LEASEHOLD`<br>**Type:** Enum (String) | No |
+| **furnished** | Furnishing condition (only applicable to HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE; ignored for other types).<br>**Allowed values:** `FULLY`, `PARTIAL`, `UNFURNISHED`<br>**Type:** Enum (String) | No |
+| **tenure** | Tenure of the property (only applicable for FOR_SALE CONDO; ignored for all FOR_RENT listings and other property types).<br>**Allowed values:** `FREEHOLD`, `LEASEHOLD`<br>**Type:** Enum (String) | No |
 
 ---
 
@@ -209,7 +221,7 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 ### Amenities
 
-Different property types support different amenities.
+Different property types support different amenities. Note: Amenities that are not applicable to the property type may be accepted by the schema but ignored by PropertyHub.
 
 #### For CONDO Property Type
 
@@ -527,6 +539,20 @@ Pictures can be provided in 3 different formats.
 ```
 
 ---
+
+## Validation
+
+- Schema file: `propertyhub-feed-schema-v2.json`
+- Validate with ajv-cli:
+  - `npm i -g ajv-cli ajv-formats`
+  - `ajv validate -s propertyhub-feed-schema-v2.json -d your_feed.json`
+
+Notes:
+
+- `listingCount` should equal the length of `listingData` (not enforced by schema).
+- Use ISO 8601 (UTC) for date/time.
+- Prices must be integers.
+- Fields marked "ignored" are accepted by the schema but not used by PropertyHub, and may be dropped internally.
 
 ## Key Changes from v1.10
 
