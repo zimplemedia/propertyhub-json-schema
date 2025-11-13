@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PropertyHub JSON Feed Validator</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <style>
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -58,7 +59,15 @@
       <div id="resultSection" class="hidden bg-white rounded-xl shadow p-8">
         <div class="flex items-center justify-between pb-4 border-b-2 border-gray-200 mb-6">
           <h2 class="text-xl font-semibold text-gray-900">Validation Result</h2>
-          <span id="resultBadge" class="px-4 py-2 rounded-full font-semibold text-sm"></span>
+          <div class="flex items-center gap-3">
+            <button id="exportBtn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition text-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export to Excel
+            </button>
+            <span id="resultBadge" class="px-4 py-2 rounded-full font-semibold text-sm"></span>
+          </div>
         </div>
         <div id="resultContent" class="text-sm"></div>
       </div>
@@ -67,6 +76,7 @@
 
   <script>
     let selectedFile = null;
+    let lastValidationResult = null;
 
     // Load schema on page load
     async function loadSchema() {
@@ -156,11 +166,13 @@
         });
 
         const result = await response.json();
+        lastValidationResult = result;
 
         loading.classList.add('hidden');
         resultSection.classList.remove('hidden');
 
         if (result.valid) {
+          document.getElementById('exportBtn').classList.add('hidden');
           resultBadge.textContent = '✓ Valid';
           resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-800';
           resultContent.innerHTML = `
@@ -175,6 +187,9 @@
         } else {
           resultBadge.textContent = '✗ Invalid';
           resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-800';
+          
+          // Show export button
+          document.getElementById('exportBtn').classList.remove('hidden');
           
           // Build error summary at the top
           let errorsHtml = `
@@ -329,6 +344,106 @@
         `;
       }
     });
+
+    // Export to Excel function
+    function exportToExcel() {
+      if (!lastValidationResult || lastValidationResult.valid) {
+        alert('No validation errors to export');
+        return;
+      }
+
+      const result = lastValidationResult;
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      
+      // Sheet 1: Summary
+      const summaryData = [
+        ['PropertyHub Feed Validation Report'],
+        ['Generated:', new Date().toLocaleString()],
+        [],
+        ['Validation Summary'],
+        ['Total Errors', result.totalErrors],
+        ['Cascading Errors (Filtered)', result.cascadingErrors],
+        ['Unique Error Types', result.uniqueErrorTypes],
+        ['Affected Listings', result.affectedListings],
+        ['Total Listings', result.totalListings],
+        [],
+        ['Error Breakdown by Type'],
+        ['Count', 'Error Message', 'Sample Paths']
+      ];
+      
+      if (result.summary) {
+        result.summary.forEach(item => {
+          summaryData.push([
+            item.count,
+            item.message,
+            item.samples.slice(0, 3).join(', ')
+          ]);
+        });
+      }
+      
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      
+      // Set column widths
+      summarySheet['!cols'] = [
+        { wch: 30 },
+        { wch: 50 },
+        { wch: 50 }
+      ];
+      
+      XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+      
+      // Sheet 2: Error Details
+      const errorData = [
+        ['RefNo', 'Property Type', 'Post Type', 'Field', 'Error Message']
+      ];
+      
+      if (result.errorsByListing) {
+        Object.entries(result.errorsByListing).forEach(([index, listingData]) => {
+          if (index !== '_root') {
+            listingData.errors.forEach(error => {
+              // Extract field name from path
+              const field = error.path.split('/').filter(p => p).pop() || 'root';
+              
+              errorData.push([
+                listingData.refNo,
+                listingData.propertyType,
+                listingData.postType,
+                field,
+                error.message
+              ]);
+            });
+          }
+        });
+      }
+      
+      const errorSheet = XLSX.utils.aoa_to_sheet(errorData);
+      
+      // Set column widths
+      errorSheet['!cols'] = [
+        { wch: 20 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 30 },
+        { wch: 50 }
+      ];
+      
+      // Enable filters
+      errorSheet['!autofilter'] = { ref: `A1:E${errorData.length}` };
+      
+      XLSX.utils.book_append_sheet(wb, errorSheet, 'Error Details');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `propertyhub-validation-errors-${timestamp}.xlsx`;
+      
+      // Download
+      XLSX.writeFile(wb, filename);
+    }
+    
+    // Add export button handler
+    document.getElementById('exportBtn').addEventListener('click', exportToExcel);
 
     // Load schema on page load
     loadSchema();
