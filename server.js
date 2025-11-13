@@ -74,30 +74,70 @@ function formatErrors(errors) {
   });
 }
 
-// Helper to group errors by listing
-function groupErrorsByListing(errors) {
+// Helper to filter cascading errors
+function filterCascadingErrors(errors) {
+  return errors.filter(error => 
+    error.message !== 'must match "then" schema' && 
+    error.message !== 'must match "if" schema'
+  );
+}
+
+// Helper to group errors by listing and add refNo
+function groupErrorsByListing(errors, feed) {
   const grouped = {};
   
   errors.forEach(error => {
     const match = error.path.match(/^\/listingData\/(\d+)/);
     if (match) {
-      const index = match[1];
+      const index = parseInt(match[1]);
       if (!grouped[index]) {
-        grouped[index] = [];
+        grouped[index] = {
+          refNo: feed.listingData?.[index]?.refNo || 'Unknown',
+          propertyType: feed.listingData?.[index]?.propertyType || 'Unknown',
+          postType: feed.listingData?.[index]?.postType || 'Unknown',
+          errors: []
+        };
       }
-      grouped[index].push({
+      grouped[index].errors.push({
         ...error,
         path: error.path.replace(`/listingData/${index}`, '') || '/'
       });
     } else {
       if (!grouped['_root']) {
-        grouped['_root'] = [];
+        grouped['_root'] = {
+          refNo: null,
+          errors: []
+        };
       }
-      grouped['_root'].push(error);
+      grouped['_root'].errors.push(error);
     }
   });
   
   return grouped;
+}
+
+// Helper to create error summary
+function createErrorSummary(errors) {
+  const summary = {};
+  
+  errors.forEach(error => {
+    const key = error.message;
+    if (!summary[key]) {
+      summary[key] = {
+        message: error.message,
+        count: 0,
+        samples: []
+      };
+    }
+    summary[key].count++;
+    
+    // Add sample path if not too many
+    if (summary[key].samples.length < 5) {
+      summary[key].samples.push(error.path);
+    }
+  });
+  
+  return Object.values(summary).sort((a, b) => b.count - a.count);
 }
 
 // CORS headers
@@ -172,32 +212,34 @@ const server = Bun.serve({
           }, { headers: corsHeaders });
         }
         
-        // Format and group errors
-        const formattedErrors = formatErrors(validateFeed.errors);
-        const groupedErrors = groupErrorsByListing(formattedErrors);
+        // Format errors
+        const allFormattedErrors = formatErrors(validateFeed.errors);
+        
+        // Filter out cascading errors
+        const realErrors = filterCascadingErrors(allFormattedErrors);
+        const cascadingErrorCount = allFormattedErrors.length - realErrors.length;
+        
+        // Group errors by listing
+        const groupedErrors = groupErrorsByListing(realErrors, feed);
+        
+        // Create error summary
+        const errorSummary = createErrorSummary(realErrors);
+        
+        // Count affected listings
+        const affectedListings = Object.keys(groupedErrors).filter(k => k !== '_root');
         
         // Build response
         const response = {
           valid: false,
           message: 'Feed validation failed',
-          totalErrors: formattedErrors.length,
-          errors: formattedErrors,
+          totalErrors: realErrors.length,
+          cascadingErrors: cascadingErrorCount,
+          uniqueErrorTypes: errorSummary.length,
+          affectedListings: affectedListings.length,
+          totalListings: feed.listingData?.length || 0,
+          summary: errorSummary,
           errorsByListing: groupedErrors
         };
-        
-        // Add summary
-        if (groupedErrors._root) {
-          response.rootErrors = groupedErrors._root.length;
-        }
-        
-        const listingErrorCount = Object.keys(groupedErrors)
-          .filter(k => k !== '_root')
-          .reduce((acc, key) => acc + groupedErrors[key].length, 0);
-        
-        if (listingErrorCount > 0) {
-          response.listingErrors = listingErrorCount;
-          response.listingsWithErrors = Object.keys(groupedErrors).filter(k => k !== '_root').length;
-        }
         
         return Response.json(response, { 
           status: 400,

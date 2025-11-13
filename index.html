@@ -176,23 +176,143 @@
           resultBadge.textContent = '✗ Invalid';
           resultBadge.className = 'px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-800';
           
+          // Build error summary at the top
           let errorsHtml = `
-            <div class="mb-4">
-              <strong class="text-red-800">Found ${result.totalErrors} error(s)</strong>
+            <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded mb-6">
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <strong class="text-lg text-red-900 block mb-2">📊 Validation Summary</strong>
+                  <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div class="text-red-700">Total Errors:</div>
+                      <div class="text-2xl font-bold text-red-900">${result.totalErrors}</div>
+                    </div>
+                    <div>
+                      <div class="text-red-700">Affected Listings:</div>
+                      <div class="text-2xl font-bold text-red-900">${result.affectedListings} / ${result.totalListings}</div>
+                    </div>
+                    <div>
+                      <div class="text-red-700">Error Types:</div>
+                      <div class="text-2xl font-bold text-red-900">${result.uniqueErrorTypes}</div>
+                    </div>
+                    <div>
+                      <div class="text-red-700">Filtered Noise:</div>
+                      <div class="text-2xl font-bold text-red-900">${result.cascadingErrors}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ${result.cascadingErrors > 0 ? `
+                <div class="mt-3 pt-3 border-t border-red-300">
+                  <div class="text-xs text-red-700">
+                    ℹ️ ${result.cascadingErrors} cascading "must match then/if schema" errors were automatically filtered (these are side-effects of the real errors below)
+                  </div>
+                </div>
+              ` : ''}
             </div>
-            <div class="space-y-3">
           `;
 
-          result.errors.forEach(error => {
+          // Error breakdown by type
+          if (result.summary && result.summary.length > 0) {
             errorsHtml += `
-              <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <div class="font-semibold text-red-900 mb-1">Path: ${error.path}</div>
-                <div class="text-red-800">${error.message}</div>
+              <div class="mb-6">
+                <h3 class="font-semibold text-gray-900 mb-3">🔍 Error Breakdown by Type</h3>
+                <div class="space-y-2">
+            `;
+            
+            result.summary.forEach((item, idx) => {
+              errorsHtml += `
+                <div class="bg-orange-50 border border-orange-200 p-3 rounded text-sm">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <span class="font-semibold text-orange-900">${idx + 1}. [${item.count}×]</span>
+                      <span class="text-orange-800 ml-2">${item.message}</span>
+                    </div>
+                  </div>
+                  ${item.samples.length > 0 ? `
+                    <div class="mt-1 text-xs text-orange-700">
+                      Sample paths: ${item.samples.slice(0, 3).join(', ')}${item.samples.length > 3 ? '...' : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            });
+            
+            errorsHtml += `
+                </div>
               </div>
             `;
+          }
+
+          // Detailed errors by listing
+          errorsHtml += `
+            <div class="mb-4">
+              <h3 class="font-semibold text-gray-900 mb-3">📝 Detailed Errors by Listing</h3>
+              <div class="space-y-4">
+          `;
+
+          const listings = Object.entries(result.errorsByListing || {});
+          
+          listings.forEach(([index, listingData]) => {
+            if (index === '_root') {
+              errorsHtml += `
+                <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+                  <div class="font-semibold text-red-900 mb-2">Root Level Errors</div>
+                  <div class="space-y-2">
+              `;
+              listingData.errors.forEach(error => {
+                errorsHtml += `
+                  <div class="text-sm">
+                    <div class="text-red-700">Path: ${error.path}</div>
+                    <div class="text-red-800">${error.message}</div>
+                  </div>
+                `;
+              });
+              errorsHtml += `
+                  </div>
+                </div>
+              `;
+            } else {
+              errorsHtml += `
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                  <div class="flex items-start justify-between mb-2">
+                    <div>
+                      <div class="font-semibold text-red-900">
+                        <span class="bg-red-200 px-2 py-1 rounded text-xs mr-2">Listing #${index}</span>
+                        refNo: "${listingData.refNo}"
+                      </div>
+                      <div class="text-xs text-red-700 mt-1">
+                        ${listingData.propertyType} - ${listingData.postType}
+                      </div>
+                    </div>
+                    <div class="bg-red-200 text-red-900 px-2 py-1 rounded-full text-xs font-semibold">
+                      ${listingData.errors.length} error${listingData.errors.length > 1 ? 's' : ''}
+                    </div>
+                  </div>
+                  <div class="space-y-2 mt-3">
+              `;
+              
+              listingData.errors.forEach(error => {
+                errorsHtml += `
+                  <div class="bg-white p-2 rounded text-sm border border-red-200">
+                    <div class="text-red-700 font-medium">Path: ${error.path}</div>
+                    <div class="text-red-800">${error.message}</div>
+                  </div>
+                `;
+              });
+              
+              errorsHtml += `
+                  </div>
+                </div>
+              `;
+            }
           });
 
-          errorsHtml += '</div>';
+          errorsHtml += `
+              </div>
+            </div>
+          `;
+          
           resultContent.innerHTML = errorsHtml;
         }
 
