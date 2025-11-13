@@ -403,8 +403,23 @@
         Object.entries(result.errorsByListing).forEach(([index, listingData]) => {
           if (index !== '_root') {
             listingData.errors.forEach(error => {
-              // Extract field name from path
-              const field = error.path.split('/').filter(p => p).pop() || 'root';
+              // Extract field name
+              let field = 'root';
+              
+              // For missing required field errors, use the field name from the error message or params
+              if (error.message && error.message.includes('Missing required field:')) {
+                const match = error.message.match(/Missing required field: (\w+)/);
+                if (match) {
+                  field = match[1];
+                }
+              } else if (error.params && error.params.missingProperty) {
+                // Use missingProperty from params if available
+                field = error.params.missingProperty;
+              } else {
+                // Extract from path for other errors
+                const pathParts = error.path.split('/').filter(p => p);
+                field = pathParts.pop() || 'root';
+              }
               
               errorData.push([
                 listingData.refNo,
