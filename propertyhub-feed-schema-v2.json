@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://propertyhub.in.th/schemas/json-feed-v2.0.json",
+  "$id": "https://propertyhub.in.th/schemas/json-feed-v2.1.json",
   "title": "PropertyHub JSON Feed",
-  "description": "JSON specification for authorized partners to provide property listing information to PropertyHub",
+  "description": "JSON specification for authorized partners to provide property listing information to PropertyHub. Version 2.1: Improved conditional validation for field constraints based on property types.",
   "type": "object",
   "required": ["updatedAt", "listingCount", "listingData"],
   "properties": {
@@ -122,39 +122,32 @@
         },
         "areaWidth": {
           "type": "number",
-          "description": "Width of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)",
-          "exclusiveMinimum": 0
+          "description": "Width of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)"
         },
         "areaDepth": {
           "type": "number",
-          "description": "Depth of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)",
-          "exclusiveMinimum": 0
+          "description": "Depth of the usable area in meters (only valid for RETAIL_SPACE, OFFICE, FACTORY)"
         },
         "landWidth": {
           "type": "number",
-          "description": "Width of the land plot in meters (only valid for LAND)",
-          "exclusiveMinimum": 0
+          "description": "Width of the land plot in meters (only valid for LAND)"
         },
         "landDepth": {
           "type": "number",
-          "description": "Depth of the land plot in meters (only valid for LAND)",
-          "exclusiveMinimum": 0
+          "description": "Depth of the land plot in meters (only valid for LAND)"
         },
         "numberOfBed": {
           "type": "integer",
-          "description": "Number of bedrooms. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE. Optional for CONDO (will be inferred from roomType if not provided).",
-          "minimum": 1
+          "description": "Number of bedrooms. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE. Optional for CONDO (will be inferred from roomType if not provided)."
         },
         "numberOfBath": {
           "type": "integer",
-          "description": "Number of bathrooms. Required for CONDO, HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE.",
-          "minimum": 1
+          "description": "Number of bathrooms. Required for CONDO, HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE."
         },
         "numberOfFloor": {
           "type": "number",
           "multipleOf": 0.5,
-          "description": "Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Not valid for CONDO and LAND.",
-          "minimum": 1
+          "description": "Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Not valid for CONDO and LAND."
         },
         "numberOfParking": {
           "type": "integer",
@@ -163,13 +156,11 @@
         },
         "numberOfRoom": {
           "type": "integer",
-          "description": "Number of rooms in the building (only valid for APARTMENT for SALE)",
-          "minimum": 1
+          "description": "Number of rooms in the building (only valid for APARTMENT for SALE)"
         },
         "avgRoomArea": {
           "type": "number",
-          "description": "Average size of room in the building in square meters (only valid for APARTMENT for SALE)",
-          "exclusiveMinimum": 0
+          "description": "Average size of room in the building in square meters (only valid for APARTMENT for SALE)"
         },
         "facingDirection": {
           "type": "string",
@@ -317,6 +308,159 @@
               },
               "location": {
                 "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["CONDO", "HOME", "TOWN_HOUSE", "SHOP_HOUSE", "HOME_OFFICE", "TWIN_HOUSE"]
+              }
+            },
+            "required": ["numberOfBath"]
+          },
+          "then": {
+            "properties": {
+              "numberOfBath": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["HOME", "TOWN_HOUSE", "SHOP_HOUSE", "HOME_OFFICE", "TWIN_HOUSE"]
+              }
+            },
+            "required": ["numberOfBed"]
+          },
+          "then": {
+            "properties": {
+              "numberOfBed": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["HOME", "TOWN_HOUSE", "SHOP_HOUSE", "HOME_OFFICE", "TWIN_HOUSE", "APARTMENT"]
+              }
+            },
+            "required": ["numberOfFloor"]
+          },
+          "then": {
+            "properties": {
+              "numberOfFloor": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "APARTMENT"
+              }
+            },
+            "required": ["numberOfRoom"]
+          },
+          "then": {
+            "properties": {
+              "numberOfRoom": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "APARTMENT"
+              }
+            },
+            "required": ["avgRoomArea"]
+          },
+          "then": {
+            "properties": {
+              "avgRoomArea": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["RETAIL_SPACE", "OFFICE", "FACTORY"]
+              }
+            },
+            "required": ["areaWidth"]
+          },
+          "then": {
+            "properties": {
+              "areaWidth": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["RETAIL_SPACE", "OFFICE", "FACTORY"]
+              }
+            },
+            "required": ["areaDepth"]
+          },
+          "then": {
+            "properties": {
+              "areaDepth": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "LAND"
+              }
+            },
+            "required": ["landWidth"]
+          },
+          "then": {
+            "properties": {
+              "landWidth": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "LAND"
+              }
+            },
+            "required": ["landDepth"]
+          },
+          "then": {
+            "properties": {
+              "landDepth": {
+                "exclusiveMinimum": 0
               }
             }
           }

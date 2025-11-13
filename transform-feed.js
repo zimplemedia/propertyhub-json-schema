@@ -66,7 +66,11 @@ function cleanString(value) {
     return trimmed;
   }
   
-  // Convert non-string to string
+  // Convert non-string to string (e.g., numbers like 919 for soi, 501 for homeAddress)
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  
   return String(value);
 }
 
