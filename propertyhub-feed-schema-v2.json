@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://propertyhub.in.th/schemas/json-feed-v2.1.json",
+  "$id": "https://propertyhub.in.th/schemas/json-feed-v2.2.json",
   "title": "PropertyHub JSON Feed",
-  "description": "JSON specification for authorized partners to provide property listing information to PropertyHub. Version 2.1: Improved conditional validation for field constraints based on property types.",
+  "description": "JSON specification for authorized partners to provide property listing information to PropertyHub. Version 2.2: Fixed validation to explicitly prohibit invalid fields for specific property types (e.g., landArea not allowed for CONDO, floorArea not allowed for LAND).",
   "type": "object",
   "required": ["updatedAt", "listingCount", "listingData"],
   "properties": {
@@ -117,8 +117,7 @@
         },
         "landArea": {
           "type": "number",
-          "description": "Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Not valid for CONDO.",
-          "exclusiveMinimum": 0
+          "description": "Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Not valid for CONDO."
         },
         "areaWidth": {
           "type": "number",
@@ -476,7 +475,15 @@
           "then": {
             "properties": {
               "price": {
-                "required": ["forSale"]
+                "required": ["forSale"],
+                "properties": {
+                  "forSale": {
+                    "allOf": [
+                      { "$ref": "#/$defs/forSalePrice" },
+                      { "properties": { "price": { "minimum": 1 } } }
+                    ]
+                  }
+                }
               }
             }
           }
@@ -492,7 +499,32 @@
           "then": {
             "properties": {
               "price": {
-                "required": ["forRent"]
+                "required": ["forRent"],
+                "properties": {
+                  "forRent": {
+                    "allOf": [
+                      { "$ref": "#/$defs/forRentPrice" },
+                      { "properties": { "price": { "minimum": 1 } } }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "enum": ["HOME", "TOWN_HOUSE", "SHOP_HOUSE", "HOME_OFFICE", "TWIN_HOUSE", "LAND", "FACTORY", "APARTMENT"]
+              }
+            },
+            "required": ["landArea"]
+          },
+          "then": {
+            "properties": {
+              "landArea": {
+                "exclusiveMinimum": 0
               }
             }
           }
@@ -504,7 +536,8 @@
       "properties": {
         "projectId": {
           "type": "integer",
-          "description": "Project ID according to PropertyHub Project ID (preferred option). Required for CONDO."
+          "minimum": 1,
+          "description": "Project ID according to PropertyHub Project ID (preferred option). Required for CONDO. Must be a positive integer (0 is not valid)."
         },
         "projectName": {
           "type": "string",
@@ -550,12 +583,13 @@
     },
     "price": {
       "type": "object",
+      "description": "Price information. forSale is strictly validated only when postType=FOR_SALE, forRent is strictly validated only when postType=FOR_RENT. The non-relevant price type (null, empty, invalid) is ignored.",
       "properties": {
         "forSale": {
-          "$ref": "#/$defs/forSalePrice"
+          "description": "Sale price. Only validated when postType=FOR_SALE. Ignored (null/empty/invalid allowed) for FOR_RENT listings."
         },
         "forRent": {
-          "$ref": "#/$defs/forRentPrice"
+          "description": "Rental price. Only validated when postType=FOR_RENT. Ignored (null/empty/invalid allowed) for FOR_SALE listings."
         }
       }
     },
@@ -570,7 +604,7 @@
         "price": {
           "type": "integer",
           "description": "Selling price in THB (required when priceType is AMOUNT). Must be integer.",
-          "minimum": 1
+          "minimum": 0
         }
       },
       "if": {
@@ -595,7 +629,7 @@
         "price": {
           "type": "integer",
           "description": "Monthly rental price in THB (required when priceType is AMOUNT). Must be integer.",
-          "minimum": 1
+          "minimum": 0
         },
         "advancePayment": {
           "$ref": "#/$defs/advancePayment"
@@ -837,7 +871,6 @@
       "oneOf": [
         {
           "type": "string",
-          "format": "uri",
           "description": "Simple format: direct URL to the picture"
         },
         {
@@ -846,7 +879,6 @@
           "properties": {
             "url": {
               "type": "string",
-              "format": "uri",
               "description": "Full URL to the picture"
             },
             "caption": {
