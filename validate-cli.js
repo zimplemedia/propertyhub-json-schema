@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import addErrors from 'ajv-errors';
 import schema from './propertyhub-feed-schema-v2.json' with { type: 'json' };
 import { readFileSync, writeFileSync } from 'fs';
 import { transformFeed } from './transform-feed.js';
@@ -32,6 +33,7 @@ const ajv = new Ajv2020({
   validateFormats: true
 });
 addFormats(ajv);
+addErrors(ajv);
 
 // Add schema
 ajv.addSchema(schema);

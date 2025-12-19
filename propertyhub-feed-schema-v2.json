@@ -299,12 +299,29 @@
             }
           },
           "then": {
-            "required": ["landArea", "numberOfFloor", "numberOfRoom", "location"],
             "properties": {
               "postType": {
                 "const": "FOR_SALE",
-                "description": "APARTMENT can only be FOR_SALE"
+                "errorMessage": "APARTMENT can only be FOR_SALE, not FOR_RENT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "propertyType": {
+                "const": "APARTMENT"
               },
+              "postType": {
+                "const": "FOR_SALE"
+              }
+            },
+            "required": ["propertyType", "postType"]
+          },
+          "then": {
+            "required": ["landArea", "numberOfFloor", "numberOfRoom", "location"],
+            "properties": {
               "location": {
                 "anyOf": [{ "required": ["projectId"] }, { "required": ["lat", "lng"] }]
               }
