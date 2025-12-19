@@ -316,7 +316,7 @@ function transformAmenities(amenities) {
     'hasPersonalPool',
     'hasEvCharger',
     'hasBuildInCloset',
-    'hasStorageRoom',
+    'hasStorageRoom'
   ];
 
   booleanFields.forEach((field) => {
@@ -382,9 +382,14 @@ function transformPictures(pictures) {
   return pictures;
 }
 
-function transformListing(listing) {
+// User IDs with relaxed validation rules (same as convertFeedDataToListingData.js)
+const RELAXED_ONFLOOR_USERS = [229011, 255079, 273427, 240156, 238988, 294688, 218893, 298858];
+const RELAXED_BED_BATH_FLOOR_USERS = [273427, 238988, 294688, 218893, 298858];
+
+function transformListing(listing, options = {}) {
   if (!listing) return listing;
 
+  const { userId } = options;
   const transformed = { ...listing };
 
   // String fields that should not be empty
@@ -628,6 +633,39 @@ function transformListing(listing) {
     delete transformed.numberOfFloor;
   }
 
+  // Apply user-specific relaxation rules for early validation
+  // These match the rules in convertFeedDataToListingData.js
+  if (userId) {
+    // Relax onFloor requirement for CONDO (allow missing or '-')
+    if (transformed.propertyType === 'CONDO' && RELAXED_ONFLOOR_USERS.includes(userId)) {
+      if (!transformed.onFloor || transformed.onFloor === '-' || transformed.onFloor === '-1') {
+        transformed.onFloor = ''; // Empty string is valid per schema type: ["string", "integer"]
+      }
+    }
+
+    // Relax numberOfBed, numberOfBath, numberOfFloor requirements
+    if (RELAXED_BED_BATH_FLOOR_USERS.includes(userId)) {
+      const propTypesNeedingBedBath = ['CONDO', 'HOME', 'SHOP_HOUSE', 'TOWN_HOUSE', 'HOME_OFFICE', 'TWIN_HOUSE'];
+      const propTypesNeedingFloor = ['HOME', 'SHOP_HOUSE', 'TOWN_HOUSE', 'HOME_OFFICE', 'TWIN_HOUSE', 'APARTMENT'];
+
+      if (propTypesNeedingBedBath.includes(transformed.propertyType)) {
+        // Set to 1 to pass schema minimum requirement (downstream convertFeedDataToListingData will set to 0)
+        if (transformed.numberOfBed === undefined || transformed.numberOfBed === null || transformed.numberOfBed === '-') {
+          transformed.numberOfBed = 1;
+        }
+        if (transformed.numberOfBath === undefined || transformed.numberOfBath === null || transformed.numberOfBath === '-') {
+          transformed.numberOfBath = 1;
+        }
+      }
+
+      if (propTypesNeedingFloor.includes(transformed.propertyType)) {
+        if (transformed.numberOfFloor === undefined || transformed.numberOfFloor === null || transformed.numberOfFloor === '-') {
+          transformed.numberOfFloor = 1;
+        }
+      }
+    }
+  }
+
   return transformed;
 }
 
@@ -709,7 +747,12 @@ export function trackTransforms(original, transformed, mappedProjectId = null) {
   }
 
   // Track price conversions
-  const priceFields = ['price.forSale.price', 'price.forRent.price', 'price.forRent.deposit.depositAmount', 'price.forRent.advancePayment.advancePaymentAmount'];
+  const priceFields = [
+    'price.forSale.price',
+    'price.forRent.price',
+    'price.forRent.deposit.depositAmount',
+    'price.forRent.advancePayment.advancePaymentAmount'
+  ];
   priceFields.forEach((field) => {
     const origVal = get(original, field);
     const transVal = get(transformed, field);
@@ -739,7 +782,7 @@ export function trackTransforms(original, transformed, mappedProjectId = null) {
     'amenities.hasWasher',
     'amenities.hasFurniture',
     'amenities.hasInternet',
-    'amenities.hasPhone',
+    'amenities.hasPhone'
   ];
   amenityFields.forEach((field) => {
     const origVal = get(original, field);

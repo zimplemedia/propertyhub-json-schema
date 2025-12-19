@@ -1,8 +1,8 @@
-# Propertyhub JSON Feed Specification v2.0
+# Propertyhub JSON Feed Specification v2.2
 
 ## Overview
 
-This JSON specification provides a simple channel for authorized partners to provide property listing information to PropertyHub. Version 2.0 follows JSON Schema Draft 2020-12 specification and includes improved validation rules and clearer field requirements per property type.
+This JSON specification provides a simple channel for authorized partners to provide property listing information to PropertyHub. Version 2.2 follows JSON Schema Draft 2020-12 specification and includes improved validation rules and clearer field requirements per property type.
 
 ---
 
@@ -51,6 +51,7 @@ You can provide just `th`, just `en`, or both. At least one language is required
 - Required: `roomType`, `onFloor`, `floorArea`, `numberOfBath`
 - Location must include: `projectId`
 - Note: `numberOfBed` is optional (will be inferred from roomType if not provided)
+- **Important:** Do NOT send `landArea` or `numberOfFloor` for CONDO properties. These fields are not applicable and will be ignored.
 
 **For HOME, TOWN_HOUSE, SHOP_HOUSE, HOME_OFFICE, TWIN_HOUSE:**
 
@@ -61,6 +62,7 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 - Required: `landArea`, `location`
 - Location must include: `projectId` OR both `lat` and `lng`
+- **Important:** Do NOT send `floorArea` or `numberOfFloor` for LAND properties. These fields are not applicable and will be ignored.
 
 **For OFFICE, RETAIL_SPACE:**
 
@@ -84,32 +86,32 @@ You can provide just `th`, just `en`, or both. At least one language is required
 
 #### Location Information
 
-| Field               | Description                                                                                                            | Required    |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------- |
-| **projectId**       | Project ID according to PropertyHub Project ID (preferred option). **Required for CONDO**.<br>**Type:** Integer        | Conditional |
-| **projectName**     | Project name of the property.<br>**Type:** String                                                                      | No          |
-| **homeAddress**     | Home address of the property (not applicable for CONDO or LAND; ignored if provided).<br>**Type:** String              | No          |
-| **soi**             | Alley/street name (e.g., Sukhumvit 24) - ignored for CONDO.<br>**Type:** String                                        | No          |
-| **road**            | Road name - ignored for CONDO.<br>**Type:** String                                                                     | No          |
-| **provinceCode**    | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** String                                           | No          |
-| **districtCode**    | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** Integer                                          | No          |
-| **subDistrictCode** | **DEPRECATED** Subdistrict code derived from lat/lng (ignored for CONDO).<br>**Type:** Integer                         | No          |
-| **postCode**        | Post code - ignored for CONDO.<br>**Type:** Integer                                                                    | No          |
-| **lat**             | Latitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number  | Conditional |
-| **lng**             | Longitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number | Conditional |
+| Field | Description | Required |
+| --- | --- | --- |
+| **projectId** | Project ID according to PropertyHub Project ID (preferred option). **Required for CONDO. Must be a positive integer (minimum: 1, 0 is not valid).**<br>**Type:** Integer | Conditional |
+| **projectName** | Project name of the property.<br>**Type:** String | No |
+| **homeAddress** | Home address of the property (not applicable for CONDO or LAND; ignored if provided).<br>**Type:** String | No |
+| **soi** | Alley/street name (e.g., Sukhumvit 24) - ignored for CONDO.<br>**Type:** String | No |
+| **road** | Road name - ignored for CONDO.<br>**Type:** String | No |
+| **provinceCode** | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** String | No |
+| **districtCode** | **DEPRECATED** Derived from lat/lng (ignored for CONDO).<br>**Type:** Integer | No |
+| **subDistrictCode** | **DEPRECATED** Subdistrict code derived from lat/lng (ignored for CONDO).<br>**Type:** Integer | No |
+| **postCode** | Post code - ignored for CONDO.<br>**Type:** Integer | No |
+| **lat** | Latitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number | Conditional |
+| **lng** | Longitude of the property. Required for non-CONDO if projectId is not provided. Ignored for CONDO.<br>**Type:** Number | Conditional |
 
 ---
 
 #### Property Dimensions
 
-| Field         | Description                                                                                                                                                  | Required    |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| **floorArea** | Floor area in square meters. For CONDO: room size. For others: usable area. Ignored for LAND.<br>**Type:** Number (must be greater than 0)                   | Conditional |
-| **landArea**  | Land size in square wa (1 sq wa = 4 sq meters). Required for non-CONDO types. Ignored for CONDO.<br>**Type:** Number (must be greater than 0)                | Conditional |
-| **areaWidth** | Width of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No          |
-| **areaDepth** | Depth of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No          |
-| **landWidth** | Width of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0)                            | No          |
-| **landDepth** | Depth of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0)                            | No          |
+| Field | Description | Required |
+| --- | --- | --- |
+| **floorArea** | Floor area in square meters. For CONDO: room size. For others: usable area. Do NOT send for LAND.<br>**Type:** Number (must be greater than 0) | Conditional |
+| **landArea** | Land size in square wa (1 sq wa = 4 sq meters). Required for HOME, TOWN_HOUSE, SHOP_HOUSE, HOME_OFFICE, TWIN_HOUSE, LAND, FACTORY, APARTMENT. Do NOT send for CONDO.<br>**Type:** Number (must be greater than 0) | Conditional |
+| **areaWidth** | Width of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No |
+| **areaDepth** | Depth of the usable area in meters (only applicable to RETAIL_SPACE, OFFICE, FACTORY; ignored for other types).<br>**Type:** Number (must be greater than 0) | No |
+| **landWidth** | Width of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0) | No |
+| **landDepth** | Depth of the land plot in meters (only applicable to LAND; ignored for other types).<br>**Type:** Number (must be greater than 0) | No |
 
 ---
 
@@ -123,7 +125,7 @@ You can provide just `th`, just `en`, or both. At least one language is required
 | **roomHomeAddress** | Home address of CONDO room (e.g., '5/333') — only applicable to CONDO; ignored for other types.<br>**Type:** String | No |
 | **numberOfBed** | Number of bedrooms. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE. Optional for CONDO (will be inferred from roomType if not provided).<br>**Type:** Integer (minimum: 1) | Conditional |
 | **numberOfBath** | Number of bathrooms. Required for CONDO, HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE.<br>**Type:** Integer (minimum: 1) | Conditional |
-| **numberOfFloor** | Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Ignored for CONDO and LAND.<br>**Type:** Number (minimum: 1, multiple of 0.5). Example: 1, 1.5, 2, 2.5 (2.4 is invalid).<br><br>หมายเหตุ: จำนวนชั้นต้องเป็นจำนวนเต็ม หรือลงท้ายด้วย .5 เท่านั้นเช่น 2 ชั้น ครึ่ง (2.5) | Conditional |
+| **numberOfFloor** | Number of floors in the building. Required for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE, TWIN_HOUSE, APARTMENT. Do NOT send for CONDO or LAND.<br>**Type:** Number (minimum: 1, multiple of 0.5). Example: 1, 1.5, 2, 2.5 (2.4 is invalid).<br><br>หมายเหตุ: จำนวนชั้นต้องเป็นจำนวนเต็ม หรือลงท้ายด้วย .5 เท่านั้นเช่น 2 ชั้น ครึ่ง (2.5) | Conditional |
 | **numberOfParking** | Number of parking spaces available. Optional for HOME, SHOP_HOUSE, TOWN_HOUSE, HOME_OFFICE types.<br>**Type:** Integer (minimum: 0) | No |
 
 ---
@@ -152,6 +154,8 @@ You can provide just `th`, just `en`, or both. At least one language is required
 | Field | Description | Required |
 | --- | --- | --- |
 | **price** | Price object containing pricing information.<br>**Type:** Object<br><br>If `postType` is `FOR_RENT`, must include "forRent".<br>If `postType` is `FOR_SALE`, must include "forSale". | Yes |
+
+**Important:** Price values must be positive integers (minimum: 1). A price of 0 is not valid and will cause validation to fail.
 
 #### For Sale Price
 
@@ -563,6 +567,7 @@ Notes:
 5. **Deprecated Fields**: Clearly marked deprecated fields (status, provinceCode, districtCode, subDistrictCode)
 6. **Conditional Requirements**: Smart validation based on property type and post type combinations
 7. **Title Language Requirements**: Must provide either Thai or English title (or both)
+8. **Field Restrictions**: Explicit guidance on fields that should NOT be sent for specific property types (e.g., no `landArea` for CONDO, no `floorArea` for LAND)
 
 ---
 
